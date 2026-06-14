@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { Product } from "../models/Product.js";
-import { Order } from "../models/Order.js";
-import { requireAuth, requireAdmin } from "../middleware/auth.js";
+import { Product } from "../models/Product";
+import { Order } from "../models/Order";
+import { requireAuth, requireAdmin } from "../middleware/auth";
 
 export const adminRouter = Router();
 

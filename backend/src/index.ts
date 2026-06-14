@@ -2,15 +2,15 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
-import { env } from "./config/env.js";
-import { connectDb } from "./db/connect.js";
-import { errorHandler } from "./middleware/errorHandler.js";
-import { authRouter } from "./routes/auth.js";
-import { profileRouter } from "./routes/profile.js";
-import { productsRouter } from "./routes/products.js";
-import { ordersRouter } from "./routes/orders.js";
-import { uploadRouter } from "./routes/upload.js";
-import { adminRouter } from "./routes/admin.js";
+import { env } from "./config/env";
+import { connectDb } from "./db/connect";
+import { errorHandler } from "./middleware/errorHandler";
+import { authRouter } from "./routes/auth";
+import { profileRouter } from "./routes/profile";
+import { productsRouter } from "./routes/products";
+import { ordersRouter } from "./routes/orders";
+import { uploadRouter } from "./routes/upload";
+import { adminRouter } from "./routes/admin";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

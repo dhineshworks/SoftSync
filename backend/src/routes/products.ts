@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
-import { Product } from "../models/Product.js";
-import { requireAuth, requireAdmin, type AuthRequest } from "../middleware/auth.js";
-import { serializeProduct } from "../utils/serialize.js";
-import { slugify } from "../utils/slugify.js";
+import { Product } from "../models/Product";
+import { requireAuth, requireAdmin, type AuthRequest } from "../middleware/auth";
+import { serializeProduct } from "../utils/serialize";
+import { slugify } from "../utils/slugify";
 
 export const productsRouter = Router();
 

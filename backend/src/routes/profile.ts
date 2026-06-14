@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
-import { User } from "../models/User.js";
-import { requireAuth, type AuthRequest } from "../middleware/auth.js";
-import { serializeUser } from "../utils/serialize.js";
+import { User } from "../models/User";
+import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { serializeUser } from "../utils/serialize";
 
 export const profileRouter = Router();
 
