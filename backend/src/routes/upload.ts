@@ -3,8 +3,8 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { env } from "../config/env";
-import { requireAuth, requireAdmin } from "../middleware/auth";
+import { env } from "../config/env.js";
+import { requireAuth, requireAdmin } from "../middleware/auth.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadsDir = path.join(__dirname, "../../uploads");

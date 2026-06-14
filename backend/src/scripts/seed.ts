@@ -1,8 +1,8 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
-import { User } from "../models/User";
-import { Product } from "../models/Product";
+import { User } from "../models/User.js";
+import { Product } from "../models/Product.js";
 
 async function seed() {
   const uri = process.env.MONGODB_URI;

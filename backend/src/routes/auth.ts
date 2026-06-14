@@ -1,10 +1,10 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { User } from "../models/User";
-import { signToken } from "../utils/jwt";
-import { requireAuth, type AuthRequest } from "../middleware/auth";
-import { serializeUser } from "../utils/serialize";
+import { User } from "../models/User.js";
+import { signToken } from "../utils/jwt.js";
+import { requireAuth, type AuthRequest } from "../middleware/auth.js";
+import { serializeUser } from "../utils/serialize.js";
 
 export const authRouter = Router();
 
