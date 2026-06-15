@@ -37,4 +37,4 @@ backend/uploads/*
 !backend/uploads/.gitkeep
 
 # Database
-backend/src/db/connect.ts
+
