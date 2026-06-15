@@ -1,0 +1,94 @@
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { formatINR } from "@/lib/format";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/profile")({
+  component: Profile,
+});
+
+function Profile() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState({ full_name: "", phone: "" });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!loading && !user) navigate({ to: "/auth" });
+  }, [loading, user, navigate]);
+
+  useEffect(() => {
+    if (user) {
+      api.getProfile().then((data) => {
+        setProfile({ full_name: data.full_name ?? "", phone: data.phone ?? "" });
+      }).catch(() => {});
+    }
+  }, [user]);
+
+  const { data: orders } = useQuery({
+    queryKey: ["my-orders", user?.id],
+    enabled: !!user,
+    queryFn: () => api.getMyOrders(),
+  });
+
+  const save = async () => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      await api.updateProfile(profile);
+      toast.success("Profile saved");
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+    setSaving(false);
+  };
+
+  if (!user) return null;
+
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
+      <h1 className="text-4xl">Your account</h1>
+
+      <div className="mt-10 grid gap-12 md:grid-cols-[320px_1fr]">
+        <section>
+          <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Profile</h2>
+          <div className="mt-4 space-y-4">
+            <div><Label>Email</Label><Input value={user.email ?? ""} disabled /></div>
+            <div><Label>Full name</Label><Input value={profile.full_name} onChange={(e) => setProfile({ ...profile, full_name: e.target.value })} /></div>
+            <div><Label>Phone</Label><Input value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} /></div>
+            <Button onClick={save} disabled={saving} className="rounded-full">{saving ? "Saving…" : "Save"}</Button>
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Order history</h2>
+          {!orders || orders.length === 0 ? (
+            <div className="mt-4 rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+              No orders yet. <Link to="/products" className="text-foreground underline">Browse products</Link>
+            </div>
+          ) : (
+            <ul className="mt-4 divide-y divide-border border-y border-border">
+              {orders.map((o) => (
+                <li key={o.id} className="py-4">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">{formatINR(Number(o.total))}</p>
+                    <span className="rounded-full bg-secondary px-2 py-0.5 text-xs uppercase tracking-wider">{o.status}</span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {new Date(o.created_at).toLocaleString()} · {(o.items as Array<{name: string; quantity: number}>).length} items
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
