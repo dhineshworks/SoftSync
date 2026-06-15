@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: softsync
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false
+        placeholder: "Enter your MongoDB Atlas Connection URI"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://softsync.onrender.com
+        placeholder: "Enter your Render App URL after creation (optional, defaults to self)"

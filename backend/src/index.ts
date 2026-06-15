@@ -40,6 +40,22 @@ async function main() {
 
   app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
+  // Serve frontend static assets in production
+  if (env.nodeEnv === "production") {
+    const frontendDistPath = path.join(__dirname, "../../frontend/dist");
+    app.use(express.static(frontendDistPath));
+    app.get("*", (req, res, next) => {
+      if (req.path.startsWith("/api") || req.path.startsWith("/uploads")) {
+        return next();
+      }
+      res.sendFile(path.join(frontendDistPath, "index.html"), (err) => {
+        if (err) {
+          res.status(404).send("Frontend build not found. Please run build first.");
+        }
+      });
+    });
+  }
+
   app.use(errorHandler);
 
   app.listen(env.port, () => {
