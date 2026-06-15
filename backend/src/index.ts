@@ -21,7 +21,14 @@ async function main() {
 
   app.use(
     cors({
-      origin: env.frontendUrl,
+      origin: (origin, callback) => {
+        const allowedOrigins = [env.frontendUrl];
+        if (!origin || allowedOrigins.includes(origin) || origin.startsWith("http://localhost:")) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
       credentials: true,
     }),
   );
