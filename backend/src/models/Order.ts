@@ -1,5 +1,7 @@
 import mongoose, { Schema, type InferSchemaType } from "mongoose";
 
+import { getAbsoluteImageUrl } from "../utils/serialize.js";
+
 const orderItemSchema = new Schema(
   {
     id: String,
@@ -40,7 +42,10 @@ orderSchema.set("toJSON", {
       customer_name: obj.customerName,
       email: obj.email,
       phone: obj.phone,
-      items: obj.items,
+      items: (obj.items as any[])?.map((item) => ({
+        ...item,
+        image_url: getAbsoluteImageUrl(item.image_url),
+      })) || [],
       total: obj.total,
       status: obj.status,
       notes: obj.notes ?? null,
