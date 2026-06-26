@@ -2,7 +2,7 @@ services:
   - type: web
     name: softsync
     env: node
-    buildCommand: npm install --include=dev && npm run build -w backend
+    buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
