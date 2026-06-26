@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
 import path from "path";
-import fs from "fs";
 import { fileURLToPath } from "url";
 import { env } from "./config/env.js";
 import { connectDb } from "./db/connect.js";
@@ -54,22 +53,6 @@ async function main() {
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, service: "softsync-api" });
   });
-
-  app.get("/api/debug-uploads", (_req, res) => {
-    const dir = path.join(__dirname, "../uploads");
-    const exists = fs.existsSync(dir);
-    let files: string[] = [];
-    if (exists) {
-      files = fs.readdirSync(dir);
-    }
-    res.json({
-      __dirname,
-      resolvedPath: dir,
-      exists,
-      files,
-    });
-  });
-
   app.use("/api/auth", authRouter);
   app.use("/api/profile", profileRouter);
   app.use("/api/products", productsRouter);
