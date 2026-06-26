@@ -4,7 +4,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { env } from "../config/env.js";
-import { requireAuth, requireAdmin } from "../middleware/auth.js";
+import { requireAuth, requireAdmin, requireAdminOrBusiness } from "../middleware/auth.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadsDir = path.join(__dirname, "../../uploads");
@@ -33,7 +33,7 @@ const upload = multer({
 
 export const uploadRouter = Router();
 
-uploadRouter.post("/", requireAuth, requireAdmin, upload.single("file"), (req, res) => {
+uploadRouter.post("/", requireAuth, requireAdminOrBusiness, upload.single("file"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
   const url = `${env.apiPublicUrl}/uploads/${req.file.filename}`;
   res.json({ url });
