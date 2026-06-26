@@ -17,3 +17,7 @@ services:
       - key: FRONTEND_URL
         value: https://softsync.onrender.com
         placeholder: "Enter your Render App URL after creation (optional, defaults to self)"
+      - key: API_PUBLIC_URL
+        value: https://softsync.onrender.com
+        placeholder: "Enter your Render App URL after creation (optional, defaults to self)"
+

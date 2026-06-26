@@ -19,6 +19,22 @@ async function main() {
 
   const app = express();
 
+  app.set("trust proxy", true);
+
+  // Dynamically set apiPublicUrl in production if it is not configured (e.g., defaults to localhost)
+  app.use((req, _res, next) => {
+    if (env.apiPublicUrl.includes("localhost")) {
+      const host = req.get("host");
+      if (host && !host.includes("localhost") && !host.includes("127.0.0.1")) {
+        const proto = req.headers["x-forwarded-proto"] || req.protocol;
+        const singleProto = Array.isArray(proto) ? proto[0] : proto.split(",")[0].trim();
+        env.apiPublicUrl = `${singleProto}://${host}`;
+        console.log(`[api] Dynamically updated env.apiPublicUrl to: ${env.apiPublicUrl}`);
+      }
+    }
+    next();
+  });
+
   app.use(
     cors({
       origin: (origin, callback) => {
