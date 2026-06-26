@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/lib/auth";
-import { LayoutDashboard, Package, ShoppingCart } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin")({
@@ -9,25 +9,39 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminLayout() {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, isBusiness, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!loading) {
-      if (!user) navigate({ to: "/auth", search: { redirect: "/admin" } });
-      else if (!isAdmin) navigate({ to: "/" });
+      if (!user) {
+        navigate({ to: "/auth", search: { redirect: "/admin" } });
+      } else if (!isAdmin && !isBusiness) {
+        navigate({ to: "/" });
+      } else if (isBusiness && window.location.pathname === "/admin") {
+        navigate({ to: "/admin/products" });
+      }
     }
-  }, [user, isAdmin, loading, navigate]);
+  }, [user, isAdmin, isBusiness, loading, navigate]);
 
-  if (loading || !user || !isAdmin) {
+  if (loading || !user || (!isAdmin && !isBusiness)) {
     return <div className="p-12 text-center text-muted-foreground">Checking access…</div>;
   }
 
-  const nav: Array<{ to: "/admin" | "/admin/products" | "/admin/orders"; label: string; Icon: typeof LayoutDashboard; exact?: boolean }> = [
-    { to: "/admin", label: "Overview", Icon: LayoutDashboard, exact: true },
-    { to: "/admin/products", label: "Products", Icon: Package },
-    { to: "/admin/orders", label: "Orders", Icon: ShoppingCart },
-  ];
+  const nav: Array<{ to: "/admin" | "/admin/products" | "/admin/orders" | "/admin/users"; label: string; Icon: typeof LayoutDashboard; exact?: boolean }> = [];
+  
+  if (isAdmin) {
+    nav.push({ to: "/admin", label: "Overview", Icon: LayoutDashboard, exact: true });
+  }
+  
+  if (isAdmin || isBusiness) {
+    nav.push({ to: "/admin/products", label: "Products", Icon: Package });
+  }
+  
+  if (isAdmin) {
+    nav.push({ to: "/admin/orders", label: "Orders", Icon: ShoppingCart });
+    nav.push({ to: "/admin/users", label: "Users", Icon: Users });
+  }
 
   return (
     <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[220px_1fr] lg:px-8">

@@ -4,7 +4,7 @@ import { env } from "../config/env.js";
 export type JwtPayload = {
   sub: string;
   email: string;
-  role: "user" | "admin";
+  role: "user" | "business" | "admin";
 };
 
 export function signToken(payload: JwtPayload) {

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { formatINR } from "@/lib/format";
-import { Package, ShoppingCart, IndianRupee, Star } from "lucide-react";
+import { Package, ShoppingCart, IndianRupee, Star, Users } from "lucide-react";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminOverview,
@@ -18,6 +18,7 @@ function AdminOverview() {
     { label: "Products", value: stats?.productCount ?? 0, Icon: Package },
     { label: "Featured", value: stats?.featured ?? 0, Icon: Star },
     { label: "Orders", value: stats?.orderCount ?? 0, Icon: ShoppingCart, sub: `${stats?.pending ?? 0} pending` },
+    { label: "Business Accounts", value: stats?.businessCount ?? 0, Icon: Users },
     { label: "Revenue", value: formatINR(stats?.totalRevenue ?? 0), Icon: IndianRupee },
   ];
 
@@ -26,7 +27,7 @@ function AdminOverview() {
       <h1 className="text-4xl">Overview</h1>
       <p className="mt-2 text-sm text-muted-foreground">A glance at the storefront performance.</p>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
         {cards.map(({ label, value, Icon, sub }) => (
           <div key={label} className="rounded-2xl border border-border bg-card p-5">
             <div className="flex items-center justify-between">

@@ -40,3 +40,30 @@ profileRouter.put("/", async (req: AuthRequest, res, next) => {
     next(err);
   }
 });
+
+profileRouter.post("/buy-credits", async (req: AuthRequest, res, next) => {
+  try {
+    const buySchema = z.object({
+      credits: z.number().int().positive(),
+    });
+    const { credits } = buySchema.parse(req.body);
+
+    const user = await User.findById(req.user!.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    if (user.role !== "business") {
+      return res.status(400).json({ error: "Only business accounts can buy credits" });
+    }
+
+    user.credits = (user.credits ?? 0) + credits;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: `Successfully purchased ${credits} credits.`,
+      user: serializeUser(user.toJSON()),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+

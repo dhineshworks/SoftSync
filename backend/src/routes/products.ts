@@ -1,11 +1,22 @@
 import { Router } from "express";
 import { z } from "zod";
 import { Product } from "../models/Product.js";
-import { requireAuth, requireAdmin, type AuthRequest } from "../middleware/auth.js";
+import { User } from "../models/User.js";
+import { requireAuth, requireAdmin, requireAdminOrBusiness, type AuthRequest } from "../middleware/auth.js";
 import { serializeProduct } from "../utils/serialize.js";
 import { slugify } from "../utils/slugify.js";
 
 export const productsRouter = Router();
+
+productsRouter.get("/my", requireAuth, requireAdminOrBusiness, async (req: AuthRequest, res, next) => {
+  try {
+    const filter = req.user!.role === "admin" ? {} : { ownerId: req.user!.id };
+    const products = await Product.find(filter).sort({ createdAt: -1 });
+    res.json(products.map((p) => serializeProduct(p.toJSON())));
+  } catch (err) {
+    next(err);
+  }
+});
 
 productsRouter.get("/", async (req, res, next) => {
   try {
@@ -49,10 +60,25 @@ const productBodySchema = z.object({
   is_featured: z.boolean().optional(),
 });
 
-productsRouter.post("/", requireAuth, requireAdmin, async (req: AuthRequest, res, next) => {
+productsRouter.post("/", requireAuth, requireAdminOrBusiness, async (req: AuthRequest, res, next) => {
   try {
     const body = productBodySchema.parse(req.body);
     const slug = body.slug?.trim() || slugify(body.name);
+
+    let ownerId = null;
+
+    if (req.user!.role === "business") {
+      const user = await User.findById(req.user!.id);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      if ((user.credits ?? 0) < 1) {
+        return res.status(403).json({ error: "Insufficient credits to add products. Please purchase more." });
+      }
+
+      user.credits = (user.credits ?? 0) - 1;
+      await user.save();
+      ownerId = user._id;
+    }
+
     const product = await Product.create({
       name: body.name,
       slug,
@@ -63,6 +89,7 @@ productsRouter.post("/", requireAuth, requireAdmin, async (req: AuthRequest, res
       imageUrl: body.image_url ?? null,
       stockStatus: body.stock_status ?? "in_stock",
       isFeatured: body.is_featured ?? false,
+      ownerId,
     });
     res.status(201).json(serializeProduct(product.toJSON()));
   } catch (err) {
@@ -70,9 +97,16 @@ productsRouter.post("/", requireAuth, requireAdmin, async (req: AuthRequest, res
   }
 });
 
-productsRouter.put("/:id", requireAuth, requireAdmin, async (req: AuthRequest, res, next) => {
+productsRouter.put("/:id", requireAuth, requireAdminOrBusiness, async (req: AuthRequest, res, next) => {
   try {
     const body = productBodySchema.partial().parse(req.body);
+    const existing = await Product.findById(req.params.id);
+    if (!existing) return res.status(404).json({ error: "Product not found" });
+
+    if (req.user!.role === "business" && existing.ownerId?.toString() !== req.user!.id) {
+      return res.status(403).json({ error: "Access denied: You can only edit your own products." });
+    }
+
     const product = await Product.findByIdAndUpdate(
       req.params.id,
       {
@@ -88,17 +122,22 @@ productsRouter.put("/:id", requireAuth, requireAdmin, async (req: AuthRequest, r
       },
       { new: true },
     );
-    if (!product) return res.status(404).json({ error: "Product not found" });
-    res.json(serializeProduct(product.toJSON()));
+    res.json(serializeProduct(product!.toJSON()));
   } catch (err) {
     next(err);
   }
 });
 
-productsRouter.delete("/:id", requireAuth, requireAdmin, async (req: AuthRequest, res, next) => {
+productsRouter.delete("/:id", requireAuth, requireAdminOrBusiness, async (req: AuthRequest, res, next) => {
   try {
-    const product = await Product.findByIdAndDelete(req.params.id);
-    if (!product) return res.status(404).json({ error: "Product not found" });
+    const existing = await Product.findById(req.params.id);
+    if (!existing) return res.status(404).json({ error: "Product not found" });
+
+    if (req.user!.role === "business" && existing.ownerId?.toString() !== req.user!.id) {
+      return res.status(403).json({ error: "Access denied: You can only delete your own products." });
+    }
+
+    await Product.findByIdAndDelete(req.params.id);
     res.json({ ok: true });
   } catch (err) {
     next(err);

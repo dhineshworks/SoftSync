@@ -12,6 +12,7 @@ const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8).max(72),
   full_name: z.string().trim().min(2).max(80),
+  role: z.enum(["user", "business"]).default("user"),
 });
 
 const loginSchema = z.object({
@@ -30,7 +31,8 @@ authRouter.post("/register", async (req, res, next) => {
       email: body.email,
       password,
       fullName: body.full_name,
-      role: "user",
+      role: body.role,
+      credits: body.role === "business" ? 20 : 0,
     });
 
     const token = signToken({ sub: String(user._id), email: user.email, role: user.role });

@@ -16,7 +16,8 @@ export type ApiUser = {
   email: string;
   full_name: string;
   phone: string;
-  role: "user" | "admin";
+  role: "user" | "business" | "admin";
+  credits?: number;
 };
 
 export type Product = {
@@ -30,6 +31,7 @@ export type Product = {
   image_url: string | null;
   stock_status: string;
   is_featured?: boolean;
+  owner_id?: string | null;
 };
 
 export type Order = {
@@ -60,7 +62,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
-  register: (body: { email: string; password: string; full_name: string }) =>
+  register: (body: { email: string; password: string; full_name: string; role: string }) =>
     request<{ token: string; user: ApiUser }>("/api/auth/register", { method: "POST", body: JSON.stringify(body) }),
 
   login: (body: { email: string; password: string }) =>
@@ -76,6 +78,7 @@ export const api = {
     const q = ids?.length ? `?ids=${ids.join(",")}` : "";
     return request<Product[]>(`/api/products${q}`);
   },
+  getMyProducts: () => request<Product[]>("/api/products/my"),
   getFeaturedProducts: () => request<Product[]>("/api/products/featured"),
   getProductBySlug: (slug: string) => request<Product>(`/api/products/slug/${slug}`),
   createProduct: (body: Record<string, unknown>) =>
@@ -99,7 +102,16 @@ export const api = {
       pending: number;
       totalRevenue: number;
       recent: Order[];
+      businessCount?: number;
     }>("/api/admin/stats"),
+
+  getAdminUsers: () => request<ApiUser[]>("/api/admin/users"),
+  updateAdminUser: (id: string, body: { role?: string; credits?: number; fullName?: string; phone?: string }) =>
+    request<ApiUser>(`/api/admin/users/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  deleteAdminUser: (id: string) => request<{ ok: boolean }>(`/api/admin/users/${id}`, { method: "DELETE" }),
+
+  buyCredits: (credits: number) =>
+    request<{ success: boolean; user: ApiUser }>("/api/profile/buy-credits", { method: "POST", body: JSON.stringify({ credits }) }),
 
   uploadImage: async (file: File) => {
     const form = new FormData();

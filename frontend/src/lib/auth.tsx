@@ -4,9 +4,11 @@ import { api, getToken, setToken, type ApiUser } from "@/lib/api";
 type AuthCtx = {
   user: ApiUser | null;
   isAdmin: boolean;
+  isBusiness: boolean;
   loading: boolean;
   signOut: () => void;
   setSession: (token: string, user: ApiUser) => void;
+  refreshUser: () => Promise<void>;
 };
 
 const Ctx = createContext<AuthCtx | null>(null);
@@ -14,6 +16,22 @@ const Ctx = createContext<AuthCtx | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<ApiUser | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const signOut = () => {
+    setToken(null);
+    setUser(null);
+  };
+
+  const refreshUser = async () => {
+    const token = getToken();
+    if (!token) return;
+    try {
+      const { user: u } = await api.me();
+      setUser(u);
+    } catch {
+      signOut();
+    }
+  };
 
   useEffect(() => {
     const token = getToken();
@@ -38,12 +56,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isAdmin: user?.role === "admin",
+        isBusiness: user?.role === "business",
         loading,
-        signOut: () => {
-          setToken(null);
-          setUser(null);
-        },
+        signOut,
         setSession,
+        refreshUser,
       }}
     >
       {children}

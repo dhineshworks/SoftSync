@@ -21,6 +21,7 @@ const signupSchema = z.object({
   full_name: z.string().trim().min(2).max(80),
   email: z.string().trim().email(),
   password: z.string().min(8, "At least 8 characters").max(72),
+  role: z.enum(["user", "business"]).default("user"),
 });
 const loginSchema = z.object({
   email: z.string().trim().email(),
@@ -32,7 +33,7 @@ function Auth() {
   const navigate = useNavigate();
   const { setSession } = useAuth();
   const [mode, setMode] = useState<"login" | "signup">("login");
-  const [form, setForm] = useState({ full_name: "", email: "", password: "" });
+  const [form, setForm] = useState({ full_name: "", email: "", password: "", role: "user" });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -72,10 +73,24 @@ function Auth() {
 
       <form onSubmit={handleSubmit} className="mt-10 space-y-4">
         {mode === "signup" && (
-          <div>
-            <Label htmlFor="name">Full name</Label>
-            <Input id="name" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} required />
-          </div>
+          <>
+            <div>
+              <Label htmlFor="name">Full name</Label>
+              <Input id="name" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} required />
+            </div>
+            <div>
+              <Label htmlFor="role">Account Type</Label>
+              <select
+                id="role"
+                value={form.role}
+                onChange={(e) => setForm({ ...form, role: e.target.value })}
+                className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="user">Customer Account (Buy software)</option>
+                <option value="business">Business Owner Account (Sell software)</option>
+              </select>
+            </div>
+          </>
         )}
         <div>
           <Label htmlFor="email">Email</Label>

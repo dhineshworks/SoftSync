@@ -24,6 +24,7 @@ export function serializeProduct(doc: Record<string, unknown>) {
     image_url: getAbsoluteImageUrl(doc.imageUrl as string | null),
     stock_status: doc.stockStatus ?? "in_stock",
     is_featured: !!doc.isFeatured,
+    owner_id: doc.ownerId ? String(doc.ownerId) : null,
     created_at: doc.createdAt,
     updated_at: doc.updatedAt,
   };
@@ -36,5 +37,6 @@ export function serializeUser(doc: Record<string, unknown>) {
     full_name: doc.fullName ?? "",
     phone: doc.phone ?? "",
     role: doc.role,
+    credits: doc.credits ?? 0,
   };
 }

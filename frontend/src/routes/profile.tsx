@@ -14,10 +14,26 @@ export const Route = createFileRoute("/profile")({
 });
 
 function Profile() {
-  const { user, loading } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState({ full_name: "", phone: "" });
   const [saving, setSaving] = useState(false);
+  const [buyingCredits, setBuyingCredits] = useState(false);
+
+  const handleBuyCredits = async (amount: number) => {
+    setBuyingCredits(true);
+    try {
+      const res = await api.buyCredits(amount);
+      if (res.success) {
+        toast.success(`Successfully purchased ${amount} credits!`);
+        await refreshUser();
+      }
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setBuyingCredits(false);
+    }
+  };
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
@@ -88,6 +104,41 @@ function Profile() {
             </ul>
           )}
         </section>
+        {user.role === "business" && (
+          <div className="md:col-span-2 rounded-2xl border border-border bg-card p-6">
+            <h2 className="text-xl font-semibold">Business Credits</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              You currently have <span className="font-bold text-foreground">{user.credits ?? 0} credits</span>. 
+              Adding a product to the catalog costs 1 credit.
+            </p>
+            <div className="mt-6 border-t border-border pt-6">
+              <h3 className="text-sm font-semibold">Buy Credits</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Select a package to increase your credit balance instantly.</p>
+              
+              <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                {[
+                  { amount: 10, price: 10, label: "Starter Pack" },
+                  { amount: 50, price: 40, label: "Growth Pack" },
+                  { amount: 100, price: 70, label: "Professional Pack" },
+                ].map((pack) => (
+                  <div key={pack.amount} className="rounded-xl border border-border bg-background p-4 flex flex-col justify-between hover:border-foreground/30 transition-colors">
+                    <div>
+                      <p className="text-xs uppercase font-semibold text-muted-foreground">{pack.label}</p>
+                      <p className="text-2xl font-bold mt-2">{pack.amount} Credits</p>
+                    </div>
+                    <Button 
+                      onClick={() => handleBuyCredits(pack.amount)} 
+                      disabled={buyingCredits}
+                      className="mt-4 w-full rounded-full"
+                    >
+                      Buy for ₹{pack.price}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

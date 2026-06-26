@@ -11,6 +11,7 @@ const productSchema = new Schema(
     imageUrl: { type: String, default: null },
     stockStatus: { type: String, enum: ["in_stock", "out_of_stock"], default: "in_stock" },
     isFeatured: { type: Boolean, default: false },
+    ownerId: { type: Schema.Types.ObjectId, ref: "User", default: null },
   },
   { timestamps: true },
 );

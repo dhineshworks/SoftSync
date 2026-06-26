@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,13 +29,14 @@ const blank: Form = { name: "", slug: "", category: "", description: "", price: 
 
 function AdminProducts() {
   const qc = useQueryClient();
+  const { user, isBusiness, refreshUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Form>(blank);
   const [uploading, setUploading] = useState(false);
 
   const { data } = useQuery({
     queryKey: ["admin-products"],
-    queryFn: () => api.getProducts(),
+    queryFn: () => api.getMyProducts(),
   });
 
   const openNew = () => { setForm(blank); setOpen(true); };
@@ -68,8 +70,12 @@ function AdminProducts() {
       is_featured: form.is_featured,
     };
     try {
-      if (form.id) await api.updateProduct(form.id, payload);
-      else await api.createProduct(payload);
+      if (form.id) {
+        await api.updateProduct(form.id, payload);
+      } else {
+        await api.createProduct(payload);
+        if (isBusiness) await refreshUser();
+      }
     } catch (err) {
       toast.error((err as Error).message);
       return;
@@ -91,17 +97,36 @@ function AdminProducts() {
     }
   };
 
+  const userCredits = user?.credits ?? 0;
+  const isOutOfCredits = isBusiness && userCredits < 1;
+
   return (
     <div>
+      {isBusiness && (
+        <div className="mb-6 rounded-2xl bg-secondary/50 p-4 border border-border flex items-center justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">Business Owner Account</p>
+            <p className="text-3xl font-bold mt-1">{userCredits} Credits</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Creating a new product costs 1 credit.</p>
+          </div>
+          <Button asChild variant="outline" className="rounded-full">
+            <Link to="/profile">Buy Credits</Link>
+          </Button>
+        </div>
+      )}
+
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-4xl">Products</h1>
           <p className="mt-2 text-sm text-muted-foreground">Add, edit, and manage your software catalog.</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openNew} className="rounded-full"><Plus className="mr-1 size-4" /> New product</Button>
-          </DialogTrigger>
+        <div className="flex flex-col items-end">
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openNew} disabled={isOutOfCredits} className="rounded-full">
+                <Plus className="mr-1 size-4" /> New product
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader><DialogTitle>{form.id ? "Edit product" : "New product"}</DialogTitle></DialogHeader>
             <form onSubmit={save} className="grid gap-4 sm:grid-cols-2">
@@ -136,7 +161,11 @@ function AdminProducts() {
             </form>
           </DialogContent>
         </Dialog>
+        {isOutOfCredits && (
+          <p className="text-xs text-destructive mt-1 font-medium">Out of credits. Please buy credits.</p>
+        )}
       </div>
+    </div>
 
       <ul className="mt-8 divide-y divide-border border-y border-border">
         {data?.map((p) => (
