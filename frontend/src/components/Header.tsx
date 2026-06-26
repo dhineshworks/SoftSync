@@ -7,7 +7,7 @@ import { Logo } from "@/components/Logo";
 
 export function Header() {
   const { cart, wishlist } = useStore();
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, isBusiness, signOut } = useAuth();
   const navigate = useNavigate();
   const cartCount = cart.reduce((s, i) => s + i.quantity, 0);
 
@@ -41,8 +41,8 @@ export function Header() {
               <span className="absolute -right-0.5 -top-0.5 grid size-4 place-items-center rounded-full bg-primary text-[10px] text-primary-foreground">{cartCount}</span>
             )}
           </Link>
-          {isAdmin && (
-            <Link to="/admin" className="inline-flex size-9 items-center justify-center rounded-md hover:bg-accent" aria-label="Admin">
+          {(isAdmin || isBusiness) && (
+            <Link to="/admin" className="inline-flex size-9 items-center justify-center rounded-md hover:bg-accent" aria-label="Dashboard">
               <Shield className="size-4" />
             </Link>
           )}

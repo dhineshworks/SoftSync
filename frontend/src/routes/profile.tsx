@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CreditCard, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/profile")({
   component: Profile,
@@ -18,20 +20,69 @@ function Profile() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState({ full_name: "", phone: "" });
   const [saving, setSaving] = useState(false);
-  const [buyingCredits, setBuyingCredits] = useState(false);
 
-  const handleBuyCredits = async (amount: number) => {
-    setBuyingCredits(true);
+  // Credit Purchase States
+  const [selectedPack, setSelectedPack] = useState<{ amount: number; price: number; label: string } | null>(null);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [cardForm, setCardForm] = useState({ cardNumber: "", expiry: "", cvc: "", name: "" });
+  const [processingPayment, setProcessingPayment] = useState(false);
+
+  const handlePackSelect = (pack: { amount: number; price: number; label: string }) => {
+    setSelectedPack(pack);
+    setCardForm({ cardNumber: "", expiry: "", cvc: "", name: user?.full_name || "" });
+    setCheckoutOpen(true);
+  };
+
+  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "").slice(0, 16);
+    const formatted = value.replace(/(\d{4})(?=\d)/g, "$1 ");
+    setCardForm({ ...cardForm, cardNumber: formatted });
+  };
+
+  const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "").slice(0, 4);
+    const formatted = value.length >= 2 ? `${value.slice(0, 2)}/${value.slice(2)}` : value;
+    setCardForm({ ...cardForm, expiry: formatted });
+  };
+
+  const handleCvcChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "").slice(0, 3);
+    setCardForm({ ...cardForm, cvc: value });
+  };
+
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPack) return;
+
+    const cleanCard = cardForm.cardNumber.replace(/\s/g, "");
+    if (cleanCard.length !== 16) {
+      toast.error("Please enter a valid 16-digit card number");
+      return;
+    }
+    if (!/^\d{2}\/\d{2}$/.test(cardForm.expiry)) {
+      toast.error("Please enter expiry date in MM/YY format");
+      return;
+    }
+    if (cardForm.cvc.length !== 3) {
+      toast.error("Please enter a valid 3-digit CVC");
+      return;
+    }
+
+    setProcessingPayment(true);
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
     try {
-      const res = await api.buyCredits(amount);
+      const res = await api.buyCredits(selectedPack.amount);
       if (res.success) {
-        toast.success(`Successfully purchased ${amount} credits!`);
+        toast.success(`Payment successful! Purchased ${selectedPack.amount} credits.`);
         await refreshUser();
+        setCheckoutOpen(false);
+        setSelectedPack(null);
       }
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
-      setBuyingCredits(false);
+      setProcessingPayment(false);
     }
   };
 
@@ -127,8 +178,7 @@ function Profile() {
                       <p className="text-2xl font-bold mt-2">{pack.amount} Credits</p>
                     </div>
                     <Button 
-                      onClick={() => handleBuyCredits(pack.amount)} 
-                      disabled={buyingCredits}
+                      onClick={() => handlePackSelect(pack)} 
                       className="mt-4 w-full rounded-full"
                     >
                       Buy for ₹{pack.price}
@@ -140,6 +190,91 @@ function Profile() {
           </div>
         )}
       </div>
+
+      {/* Checkout Dialog */}
+      <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="size-5" /> Secure Checkout
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedPack && (
+            <form onSubmit={handlePaymentSubmit} className="space-y-4 mt-2">
+              <div className="rounded-xl bg-muted p-4 border border-border flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase font-semibold text-muted-foreground">{selectedPack.label}</p>
+                  <p className="text-lg font-bold text-foreground mt-0.5">{selectedPack.amount} Business Credits</p>
+                </div>
+                <p className="text-xl font-bold">{formatINR(selectedPack.price)}</p>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="card-name">Cardholder Name</Label>
+                  <Input
+                    id="card-name"
+                    required
+                    placeholder="John Doe"
+                    value={cardForm.name}
+                    onChange={(e) => setCardForm({ ...cardForm, name: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="card-number">Card Number</Label>
+                  <Input
+                    id="card-number"
+                    required
+                    placeholder="4242 4242 4242 4242"
+                    value={cardForm.cardNumber}
+                    onChange={handleCardNumberChange}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="card-expiry">Expiry Date</Label>
+                    <Input
+                      id="card-expiry"
+                      required
+                      placeholder="MM/YY"
+                      value={cardForm.expiry}
+                      onChange={handleExpiryChange}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="card-cvc">CVC</Label>
+                    <Input
+                      id="card-cvc"
+                      required
+                      type="password"
+                      placeholder="123"
+                      value={cardForm.cvc}
+                      onChange={handleCvcChange}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center pt-2">
+                <ShieldCheck className="size-4 text-emerald-500" />
+                <span>SSL Encrypted 256-bit Payment Gateway</span>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => setCheckoutOpen(false)} disabled={processingPayment}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={processingPayment} className="rounded-full">
+                  {processingPayment ? "Processing…" : `Pay ${formatINR(selectedPack.price)}`}
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
